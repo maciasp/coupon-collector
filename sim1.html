@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+
+<html>
+
+
+<head>
+    <title>
+        Simulation 1, Sequential from RNG
+    </title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+
+        #overlay {
+            top: -5px;
+            left: -5px;
+            background-color: gray;
+            opacity: 0.5;
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            padding-top: 30%;
+        }
+
+
+        #overlay h1 {
+            text-align: center;
+        }
+
+
+        .input-label {
+            width: 150px;
+            display: inline-block;
+            margin-top: 3px;
+        }
+
+
+        .section-container {
+            border: solid 1px #EEE;
+            background: #FAFAFA;
+            padding: 3px;
+            margin: 3px;
+        }
+
+
+        .section-label {
+            text-align: center;
+            font-size: 20px;
+            width: 100%;
+            padding: 3px;
+        }
+
+
+        table {
+            border: solid #EEE;
+            padding: 3px;
+
+
+        }
+
+
+        th {
+            background-color: #DDF;
+            width: 100px;
+        }
+
+
+        tr:nth-child(odd) {
+            background: #FFF;
+        }
+
+
+        td {
+            text-align: right;
+        }
+    </style>
+    <script>
+
+
+        const eulerConstant = 0.5772156649;
+
+
+        const getTicks = {
+            minPoint: 0,
+            maxPoint: 10,
+            maxTicks: 10,
+            tickSpacing: 1,
+            range: 1,
+            niceMin: 1,
+            niceMax: 1,
+            niceScale(min, max) {
+                this.minPoint = min;
+                this.maxPoint = max;
+                this.calculate();
+                return {
+                    tickSpacing: this.tickSpacing,
+                    niceMinimum: this.niceMin,
+                    niceMaximum: this.niceMax
+                };
+            },
+            calculate() {
+                this.range = this.niceNum(this.maxPoint - this.minPoint, false);
+                this.tickSpacing = this.niceNum(this.range / (this.maxTicks - 1), true);
+                this.niceMin = Math.floor(this.minPoint / this.tickSpacing) * this.tickSpacing;
+                this.niceMax = Math.ceil(this.maxPoint / this.tickSpacing) * this.tickSpacing;
+            },
+            niceNum(localRange, round) {
+                var exponent; /** exponent of localRange */
+                var fraction; /** fractional part of localRange */
+                var niceFraction; /** nice, rounded fraction */
+                exponent = Math.floor(Math.log10(localRange));
+                fraction = localRange / Math.pow(10, exponent);
+                if (round) {
+                    if (fraction < 1.5) niceFraction = 1;
+                    else if (fraction < 3) niceFraction = 2;
+                    else if (fraction < 7) niceFraction = 5;
+                    else niceFraction = 10;
+                } else {
+                    if (fraction <= 1) niceFraction = 1;
+                    else if (fraction <= 2) niceFraction = 2;
+                    else if (fraction <= 5) niceFraction = 5;
+                    else niceFraction = 10;
+                }
+                return niceFraction * Math.pow(10, exponent);
+            },
+            setMinMaxPoints(localMinPoint, localMaxPoint) {
+                this.minPoint = localMinPoint;
+                this.maxPoint = localMaxPoint;
+                this.calculate();
+            },
+            setMaxTicks(localMaxTicks) {
+                this.maxTicks = localMaxTicks;
+                this.calculate();
+            }
+        }
+
+
+        function drawLineChart(userList, avg, stdev, participants) {
+
+            // Canvas context & dimensions
+            const canvas = document.getElementById('chart1');
+            const ctx = canvas.getContext("2d");
+            const maxX = canvas.width;
+            const maxY = canvas.height;
+
+
+            // Chart dimensions
+            const maximum = userList.reduce((acc, val) => val = acc > val ? acc : val);
+            let minC = 0;
+            let maxC = 0;
+            userList.forEach((x, i) => {
+                if (x !== 0) {
+                    maxC = i;
+                    if (minC === 0) { minC = i; }
+                }
+            });
+            const delta = maxC - minC;
+
+
+            //chart format
+            const marginLeft = 80;
+            const marginBottom = 30;
+            const marginRight = 10;
+            const marginTop = 10;
+            const resX = (maxX - marginLeft - marginRight) / delta;
+            const resY = (maxY - marginTop - marginBottom) / maximum;
+            // Clear image
+            ctx.clearRect(0, 0, maxX, maxY);
+            //Chart lines;
+            ctx.strokeStyle = '#444444';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop);
+            ctx.lineTo(marginLeft, maxY - marginBottom);
+            ctx.lineTo(maxX - marginRight, maxY - marginBottom);
+            ctx.stroke();
+
+
+            // Horizontal ticks
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.font = "11px Arial";
+            let tickScale = getTicks.niceScale(minC, maxC)
+            ctx.beginPath();
+            for (let i = tickScale.niceMinimum; i < tickScale.niceMaximum; i += tickScale.tickSpacing) {
+                if (i >= minC && i <= maxC) {
+                    const left = 5 * Math.trunc(Math.log10(i));
+                    ctx.moveTo(marginLeft + (i - minC) * resX, maxY - marginBottom);
+                    ctx.lineTo(marginLeft + (i - minC) * resX, maxY - marginBottom + 10);
+                    ctx.fillText(i, marginLeft + (i - minC) * resX - left, maxY - marginBottom + 20);
+                }
+            }
+            ctx.stroke();
+
+
+            // Vertical ticks
+            ctx.beginPath();
+            tickScale = getTicks.niceScale(0, maximum);
+            for (let i = tickScale.niceMinimum; i < tickScale.niceMaximum; i += tickScale.tickSpacing) {
+                const left = 20 + 10 * Math.trunc(Math.log10(i));
+                ctx.moveTo(marginLeft, maxY - marginBottom - i * resY);
+                ctx.lineTo(marginLeft - 10, maxY - marginBottom - i * resY);
+                ctx.fillText(i, marginLeft - left, 3 + maxY - marginBottom - i * resY);
+            }
+            ctx.stroke();
+
+
+            // Draw chart
+            ctx.strokeStyle = '#2288A5';
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, maxY - marginBottom)
+            userList.forEach((x, i) => {
+                if (i >= minC && i <= maxC) {
+                    const px = marginLeft + (i - minC) * resX;
+                    //ctx.moveTo(px, maxY - userList[i - 1] * resY - marginBottom);
+                    ctx.lineTo(px, maxY - x * resY - marginBottom);
+                }
+            })
+            ctx.stroke();
+
+
+            // Draw avg line
+            ctx.strokeStyle = '#C84532';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const px = marginLeft + (avg - minC) * resX;
+            ctx.moveTo(px, maxY - marginBottom)
+            ctx.lineTo(px, marginTop);
+            ctx.stroke();
+
+
+            // Gumbel distribution (Prediction)
+            ctx.strokeStyle = '#A57700';
+            ctx.lineWidth = 2;
+            const be = stdev * Math.sqrt(6) / Math.PI;
+            const mi = avg - eulerConstant * be;                             
+            ctx.beginPath();
+            for (let x = minC; x < maxC; x++) {
+                // Nethod A
+                const z = (x - mi) / be;
+                const y = (participants / be) * Math.pow(Math.E, -(z + Math.pow(Math.E, -z)));
+                const px = marginLeft + (x - minC+1) * resX;
+                const py = maxY - y * resY - marginBottom;
+                ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+
+        }
+
+
+        function start(colElements, participants, cardsInEnvelope) {
+
+
+            // Simulation
+            const totalEmmitted = Array(colElements).fill(0);
+            const userList = Array(15000).fill(0);  // Number should be big enough for groups when the number of elements <= 1000
+            const groupsPercent = Array(15000).fill(0);
+            for (let i = 0; i < participants; i++) {
+                let userCount = 0;
+                let userCollection = Array(colElements).fill(0);
+                while (userCollection.some(item => item === 0)) {
+                    let card = Math.trunc(Math.random() * colElements);
+                    totalEmmitted[card]++;
+                    userCollection[card]++;
+                    userCount++;
+                }
+                let envelopes = Math.ceil(userCount / cardsInEnvelope);
+                userCollection.forEach((x, i) => totalEmmitted[i] += x);
+                userList[envelopes]++
+            }
+
+            // Summary calculations;
+            const allCardsEmitted = totalEmmitted.reduce((pv, cv) => pv + cv, 0)
+            const averageCard = allCardsEmitted / colElements;
+            let midPos = 0;   // Median
+            let sum = 0;
+            const middle = Math.trunc(participants / 2);
+            let mode = 0;
+            userList.forEach((x, i) => {
+                sum >= middle && midPos === 0 ? midPos = i : sum += x;
+                if (x > userList[mode]) { mode = i };
+            });
+
+            // Should be similar to midPos
+            //const approximation = (colElements / cardsInEnvelope) * (Math.log(colElements) + eulerConstant);
+            const approximation = (1/cardsInEnvelope)*(colElements*Math.log(colElements)+eulerConstant*colElements+0.5);
+            const approxStdDeviation = (Math.PI * (colElements - 1)) / (cardsInEnvelope * Math.sqrt(6));
+            const approxMode = approximation - (eulerConstant*approxStdDeviation*Math.sqrt(6) / Math.PI);
+            //const approxMode2 = approximation - (eulerConstant * (colElements-1)/ cardsInEnvelope);   ---> Equivalent
+            const averageEnvs = userList.reduce((pv, cv, i) => pv + cv * i, 0) / participants;
+            let sumDevsSquared = 0;
+            userList.forEach((x, i) => {
+                if (x !== 0) {
+                    for (let j = 0; j < x; j++) { sumDevsSquared += Math.pow((i - averageEnvs), 2); }
+                }
+            })
+            const stdDeviationEnvs = Math.sqrt(sumDevsSquared / participants);
+
+            // Summary
+            let outputHtml = '<table>';
+            outputHtml += '<tr><td>Cards emitted: </td><td>' + allCardsEmitted + '</td></tr>';
+            outputHtml += '<tr><td>Average nº of each card: </td><td>' + averageCard.toFixed(2) + '</td></tr>';
+            // Cards standard deviation? Not really needed.
+            outputHtml += '<tr><td>Avg nº of envelopes per user: </td><td>' + averageEnvs.toFixed(2) + '</td></tr>';
+            outputHtml += '<tr><td>Mode: </td><td>' + mode + '</td></tr>';
+            outputHtml += '<tr><td>Median: </td><td>' + midPos + '</td></tr>';
+            outputHtml += '<tr><td>Standard deviation: </td><td>' + stdDeviationEnvs.toFixed(2) + '</td></tr>';
+            outputHtml += '<tr><td>avg (Predicted): </td><td>' + approximation.toFixed(2) + '</td></tr>';
+            outputHtml += '<tr><td>stdDev (Predicted): </td><td>' + approxStdDeviation.toFixed(2) + '</td></tr>';
+            outputHtml += '<tr><td>Mode (Predicted): </td><td>' + approxMode.toFixed(0) + '</td></tr>';
+            // outputHtml += '<tr><td>Mode (Predicted 2): </td><td>' + approxMode2.toFixed(2) + '</td></tr>';
+            
+            outputHtml += "</table>"
+            document.getElementById('summary').innerHTML = outputHtml;
+
+
+            // Chart
+            //drawLineChart(userList, averageEnvs, stdDeviationEnvs, participants);
+            drawLineChart(userList, approximation, approxStdDeviation, participants);  // StdDev, and AVG from the prediction, as they're used to draw the predicted line
+
+            // number of envelopes per user
+            outputHtml = '<table><tr><th><b>Envelopes</b></th><th><b>Collectors</b></th><th><b>Acc %</b></th></tr>';
+            let accumulated = 0;
+            userList.forEach((value, n) => {
+                if (value > 0) {
+                    accumulated += value;
+                    outputHtml += '<tr><td>' + n + '</td><td>' + value + '</td><td>' +
+                        (100 * accumulated / participants).toFixed(2) + '% </td></tr>';
+                }
+            });
+            outputHtml += '</table>';
+            document.getElementById('results').innerHTML = outputHtml;
+
+            // Total emitted cards            
+            outputHtml = '<table><tr><th><b>Card</b></th><th><b>Emmited</b></th><th>Deviation from AVG</th></tr>';
+            totalEmmitted.forEach((value, n) => outputHtml += '<tr><td>' + n + '</td><td>' + value + '</td>' + '<td>' + (100 * (value - averageCard) / averageCard).toFixed(2) + '%</td></tr>');
+            outputHtml += '</table>';
+            document.getElementById('results2').innerHTML = outputHtml;
+        }
+
+
+        function toggleOverlay(val) {
+            document.getElementById('overlay').style.display = val === 'on' ? 'block' : 'none';
+            document.body.style.overflow = val === 'on' ? 'hidden' : 'visible';
+        }
+
+
+        function submit() {
+            toggleOverlay('on');
+            // Read data from the form. No validation
+            const cards = document.getElementById('cards').value;
+            const participants = document.getElementById('participants').value;
+            const envelope = document.getElementById('envelope').value;
+            // Launch the simulation
+            console.log('Starting simulation with ' + cards + ' cards, and ' + participants + ' participants');
+            setTimeout(() => {  // Make sure all dom processes are finished before entering a long loop
+                start(parseInt(cards), parseInt(participants), parseInt(envelope));
+                console.log('Simulation finished');
+                toggleOverlay('off');
+            }, 0);
+        }
+
+
+    </script>
+</head>
+
+
+<body>
+    <div id="overlay">
+        <h1>CALCULATING...</h1>
+    </div>
+    <div class="section-container">
+        <div class="section-label">Simulation values</div>
+        <span class="input-label">Cards in collection :</span><input id="cards" type="text" value="100"><br />
+        <span class="input-label">Collectors :</span><input id="participants" type="text" value="1000"><br />
+        <span class="input-label">Cards in envelope :</span><input id="envelope" type="text" value="5"><br />
+        <span class="input-label"></span><span class="input-label"><button onclick="submit()">Launch
+                simulation</button></span>
+    </div>
+    <div class="section-container">
+        <div class="section-label"> Simulation summary </div>
+        <div id="summary"></div>
+    </div>
+
+
+    <div class="section-container">
+        <div class="section-label">Completion chart (Number of collectors)</div>
+        <canvas id="chart1" width="1024" height="400"></canvas>
+        <table>
+            <tr>
+                <td style="color:#2288A5 ;">-----</td>
+                <td style="text-align:left">Simulation</td>
+            </tr>
+            <tr>
+                <td style="color: #C84532;">-----</td>
+                <td style="text-align:left">Average line</td>
+            </tr>
+            <tr>
+                <td style="color:#A57700 ">-----</td>
+                <td style="text-align:left">Prediction</td>
+            </tr>
+        </table>
+    </div>
+    <div class="section-container">
+        <div class="section-label">Completion table</div>
+        <div id="results"></div>
+    </div>
+    <div class="section-container">
+        <div class="section-label">Cards emmited</div>
+        <div id="results2"></div>
+    </div>
+
+
+
+
+    <a onclick="window.location.href='http://umh3067.edu.umh.es/wp-content/uploads/sites/240/2013/02/C%C3%B3digo-Solucion-Cars1.pdf'">xxx</a>
+    <a onclick='window.location.href="http://umh3067.edu.umh.es/wp-content/uploads/sites/240/2013/02/C%C3%B3digo-Solucion-Cars1.pdf"''>xxx</a>
+    <a onclick='window.open("http://umh3067.edu.umh.es/wp-content/uploads/sites/240/2013/02/C%C3%B3digo-Solucion-Cars1.pdf")'>YYY</a>
+
+
+</body>
+<!-- Main purposes :
+    Take a look at the big picture:
+    a) Check that the pseudo rng is a valid tool for this purpose.
+        Values should be consistent with other studies about this subject matter.
+        That would include looking at cards emmited, and collector results.
+    b) Broad results.
+        What kind of distribution we get.
+        Collector stats.
+        How variables affect results.
+-->
+</html>
+
