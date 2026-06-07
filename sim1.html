@@ -83,8 +83,87 @@
 
         const eulerConstant = 0.5772156649;
 
+        // Port of libC's rng in BSD, port from rosettacode.org
+        let lcgSeed = 0.5;
+        const mask = (1 << 31) - 1;        
+        function randBSD() {
+          let s = lcgSeed;
+          while (true) {
+             s = (s * 1103515245 + 12345) & mask;
+          lcgSeed = s;
+          return s / 2147483648;
+          }
+        }
 
-        const getTicks = {
+
+        // https://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/VERSIONS/JAVASCRIPT/java-script.html
+        //https://www.graviness.com/javascript/samples/mt19937ar.c.js.html
+        /* generates a random number on [0,0xffffffff]-interval */
+        /* Period parameters */  
+        var N = 624;
+        var M = 397;
+        var MATRIX_A = 0x9908b0df;   /* constant vector a */
+        var UPPER_MASK = 0x80000000; /* most significant w-r bits */
+        var LOWER_MASK = 0x7fffffff; /* least significant r bits */
+        var mt = new Array(N); /* the array for the state vector */
+        var mti=N+1; /* mti==N+1 means mt[N] is not initialized */
+       /* initializes mt[N] with a seed */
+       function init_genrand(s){
+           mt[0]= s >>> 0;
+           for (mti=1; mti<N; mti++) {
+               var s = mt[mti-1] ^ (mt[mti-1] >>> 30);
+	           mt[mti] = (((((s & 0xffff0000) >>> 16) * 1812433253) << 16) + (s & 0x0000ffff) * 1812433253)
+	       		+ mti;
+               /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+               /* In the previous versions, MSBs of the seed affect   */
+               /* only MSBs of the array mt[].                        */
+               /* 2002/01/09 modified by Makoto Matsumoto             */
+               mt[mti] >>>= 0;
+               /* for >32 bit machines */
+           }
+       }
+        function genRand(){
+            var y;
+            var mag01 = new Array(0x0, MATRIX_A);
+            /* mag01[x] = x * MATRIX_A  for x=0,1 */
+
+            if (mti >= N) { /* generate N words at one time */
+            var kk;
+
+            if (mti == N+1)   /* if init_genrand() has not been called, */
+            init_genrand(5489); /* a default initial seed is used */
+
+            for (kk=0;kk<N-M;kk++) {
+                y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+                mt[kk] = mt[kk+M] ^ (y >>> 1) ^ mag01[y & 0x1];
+            }
+            for (;kk<N-1;kk++) {
+                y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+                mt[kk] = mt[kk+(M-N)] ^ (y >>> 1) ^ mag01[y & 0x1];
+            }
+            y = (mt[N-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
+            mt[N-1] = mt[M-1] ^ (y >>> 1) ^ mag01[y & 0x1];
+
+            mti = 0;
+            }
+  
+            y = mt[mti++];
+
+            /* Tempering */
+            y ^= (y >>> 11);
+            y ^= (y << 7) & 0x9d2c5680;
+            y ^= (y << 15) & 0xefc60000;
+            y ^= (y >>> 18);
+
+            return (y >>> 0) / 4294967296;
+        }
+
+    for (let i=0; i<100; i++){
+        console.log (genRand())
+    }
+    console.log (2**32)
+
+    const getTicks = {
             minPoint: 0,
             maxPoint: 10,
             maxTicks: 10,
@@ -147,7 +226,6 @@
             const maxX = canvas.width;
             const maxY = canvas.height;
 
-
             // Chart dimensions
             const maximum = userList.reduce((acc, val) => val = acc > val ? acc : val);
             let minC = 0;
@@ -160,7 +238,6 @@
             });
             const delta = maxC - minC;
 
-
             //chart format
             const marginLeft = 80;
             const marginBottom = 30;
@@ -172,17 +249,16 @@
             ctx.clearRect(0, 0, maxX, maxY);
             //Chart lines;
             ctx.strokeStyle = '#444444';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(marginLeft, marginTop);
             ctx.lineTo(marginLeft, maxY - marginBottom);
             ctx.lineTo(maxX - marginRight, maxY - marginBottom);
             ctx.stroke();
 
-
             // Horizontal ticks
             ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 3;
             ctx.font = "11px Arial";
             let tickScale = getTicks.niceScale(minC, maxC)
             ctx.beginPath();
@@ -196,7 +272,6 @@
             }
             ctx.stroke();
 
-
             // Vertical ticks
             ctx.beginPath();
             tickScale = getTicks.niceScale(0, maximum);
@@ -208,9 +283,9 @@
             }
             ctx.stroke();
 
-
             // Draw chart
             ctx.strokeStyle = '#2288A5';
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(marginLeft, maxY - marginBottom)
             userList.forEach((x, i) => {
@@ -222,20 +297,18 @@
             })
             ctx.stroke();
 
-
             // Draw avg line
             ctx.strokeStyle = '#C84532';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             const px = marginLeft + (avg - minC) * resX;
             ctx.moveTo(px, maxY - marginBottom)
             ctx.lineTo(px, marginTop);
             ctx.stroke();
 
-
             // Gumbel distribution (Prediction)
             ctx.strokeStyle = '#A57700';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             const be = stdev * Math.sqrt(6) / Math.PI;
             const mi = avg - eulerConstant * be;                             
             ctx.beginPath();
@@ -253,8 +326,7 @@
         }
 
 
-        function start(colElements, participants, cardsInEnvelope) {
-
+        function start(colElements, participants, cardsInEnvelope, rngAlgol) {
 
             // Simulation
             const totalEmmitted = Array(colElements).fill(0);
@@ -263,8 +335,24 @@
             for (let i = 0; i < participants; i++) {
                 let userCount = 0;
                 let userCollection = Array(colElements).fill(0);
+                let rngValue=0;
                 while (userCollection.some(item => item === 0)) {
-                    let card = Math.trunc(Math.random() * colElements);
+                    switch (rngAlgol){
+                        case "1":
+                          rngValue = Math.random();
+                        break;
+                        case "2":
+                          rngValue = randBSD();
+                        break;
+                        case "3":
+                          rngValue = genRand();
+                        break;
+                        default:
+                          rngValue = Math.random();
+                        break;
+                    }
+                    //let rngValue = randAlgol==="2"? randBSD() : Math.random();
+                    let card = Math.trunc(rngValue * colElements);
                     totalEmmitted[card]++;
                     userCollection[card]++;
                     userCount++;
@@ -318,7 +406,6 @@
             outputHtml += "</table>"
             document.getElementById('summary').innerHTML = outputHtml;
 
-
             // Chart
             //drawLineChart(userList, averageEnvs, stdDeviationEnvs, participants);
             drawLineChart(userList, approximation, approxStdDeviation, participants);  // StdDev, and AVG from the prediction, as they're used to draw the predicted line
@@ -356,10 +443,12 @@
             const cards = document.getElementById('cards').value;
             const participants = document.getElementById('participants').value;
             const envelope = document.getElementById('envelope').value;
+            const randAlgol = document.getElementById ('rng').value;
+            console.log (randAlgol);
             // Launch the simulation
             console.log('Starting simulation with ' + cards + ' cards, and ' + participants + ' participants');
             setTimeout(() => {  // Make sure all dom processes are finished before entering a long loop
-                start(parseInt(cards), parseInt(participants), parseInt(envelope));
+                start(parseInt(cards), parseInt(participants), parseInt(envelope), randAlgol);
                 console.log('Simulation finished');
                 toggleOverlay('off');
             }, 0);
@@ -379,6 +468,13 @@
         <span class="input-label">Cards in collection :</span><input id="cards" type="text" value="100"><br />
         <span class="input-label">Collectors :</span><input id="participants" type="text" value="1000"><br />
         <span class="input-label">Cards in envelope :</span><input id="envelope" type="text" value="5"><br />
+        <span class="input-label">Random number Generator:</span>
+        <select id="rng" value="1">
+            <option value="1">Native (JS)</option>
+            <option value="2">Linear Congruential Generator (LCG)</option>
+            <option value="3">Mersenne Twister</option>
+        </select>
+
         <span class="input-label"></span><span class="input-label"><button onclick="submit()">Launch
                 simulation</button></span>
     </div>
@@ -414,14 +510,6 @@
         <div class="section-label">Cards emmited</div>
         <div id="results2"></div>
     </div>
-
-
-
-
-    <a onclick="window.location.href='http://umh3067.edu.umh.es/wp-content/uploads/sites/240/2013/02/C%C3%B3digo-Solucion-Cars1.pdf'">xxx</a>
-    <a onclick='window.location.href="http://umh3067.edu.umh.es/wp-content/uploads/sites/240/2013/02/C%C3%B3digo-Solucion-Cars1.pdf"''>xxx</a>
-    <a onclick='window.open("http://umh3067.edu.umh.es/wp-content/uploads/sites/240/2013/02/C%C3%B3digo-Solucion-Cars1.pdf")'>YYY</a>
-
 
 </body>
 <!-- Main purposes :
