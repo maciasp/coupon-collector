@@ -131,7 +131,8 @@
                 var kk;
 
                 if (mti == N + 1)   /* if init_genrand() has not been called, */
-                    init_genrand(5489); /* a default initial seed is used */
+                    //init_genrand(5489); /* a default initial seed is used */
+                    init_genrand(lcgSeed); /*Millisecons pressed, taken from lgcSeed*/
 
                 for (kk = 0; kk < N - M; kk++) {
                     y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
@@ -433,12 +434,13 @@
 
         // Reset Randseeds for non native rngs
         function resetRandSeeds() {
-            const currTime = Date.now();
-            const milliseconds = currTime - (Math.trunc (currTime/1000)*1000);
-            N = milliseconds;
-            lcgSeed = milliseconds/1000;                                    
+            let ms = 1;
+            for (let i=0; i<4; i++){
+              const currTime = Date.now();
+              ms *= (currTime - (Math.trunc (currTime/1000)*1000));
+            }            
+            lcgSeed = ms
         }
-
 
         function submit() {
             toggleOverlay('on');
