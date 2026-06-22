@@ -85,68 +85,68 @@
 
         // Port of libC's rng in BSD, port from rosettacode.org
         let lcgSeed = 0.5;
-        const mask = (1 << 31) - 1;        
+        const mask = (1 << 31) - 1;
         function randBSD() {
-          let s = lcgSeed;
-          while (true) {
-             s = (s * 1103515245 + 12345) & mask;
-          lcgSeed = s;
-          return s / 2147483648;
-          }
+            let s = lcgSeed;
+            while (true) {
+                s = (s * 1103515245 + 12345) & mask;
+                lcgSeed = s;
+                return s / 2147483648;
+            }
         }
 
 
         // https://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/VERSIONS/JAVASCRIPT/java-script.html
         //https://www.graviness.com/javascript/samples/mt19937ar.c.js.html
         /* generates a random number on [0,0xffffffff]-interval */
-        /* Period parameters */  
+        /* Period parameters */
         var N = 624;
         var M = 397;
         var MATRIX_A = 0x9908b0df;   /* constant vector a */
         var UPPER_MASK = 0x80000000; /* most significant w-r bits */
         var LOWER_MASK = 0x7fffffff; /* least significant r bits */
         var mt = new Array(N); /* the array for the state vector */
-        var mti=N+1; /* mti==N+1 means mt[N] is not initialized */
-       /* initializes mt[N] with a seed */
-       function init_genrand(s){
-           mt[0]= s >>> 0;
-           for (mti=1; mti<N; mti++) {
-               var s = mt[mti-1] ^ (mt[mti-1] >>> 30);
-	           mt[mti] = (((((s & 0xffff0000) >>> 16) * 1812433253) << 16) + (s & 0x0000ffff) * 1812433253)
-	       		+ mti;
-               /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
-               /* In the previous versions, MSBs of the seed affect   */
-               /* only MSBs of the array mt[].                        */
-               /* 2002/01/09 modified by Makoto Matsumoto             */
-               mt[mti] >>>= 0;
-               /* for >32 bit machines */
-           }
-       }
-        function genRand(){
+        var mti = N + 1; /* mti==N+1 means mt[N] is not initialized */
+        /* initializes mt[N] with a seed */
+        function init_genrand(s) {
+            mt[0] = s >>> 0;
+            for (mti = 1; mti < N; mti++) {
+                var s = mt[mti - 1] ^ (mt[mti - 1] >>> 30);
+                mt[mti] = (((((s & 0xffff0000) >>> 16) * 1812433253) << 16) + (s & 0x0000ffff) * 1812433253)
+                    + mti;
+                /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+                /* In the previous versions, MSBs of the seed affect   */
+                /* only MSBs of the array mt[].                        */
+                /* 2002/01/09 modified by Makoto Matsumoto             */
+                mt[mti] >>>= 0;
+                /* for >32 bit machines */
+            }
+        }
+        function genRand() {
             var y;
             var mag01 = new Array(0x0, MATRIX_A);
             /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
             if (mti >= N) { /* generate N words at one time */
-            var kk;
+                var kk;
 
-            if (mti == N+1)   /* if init_genrand() has not been called, */
-            init_genrand(5489); /* a default initial seed is used */
+                if (mti == N + 1)   /* if init_genrand() has not been called, */
+                    init_genrand(5489); /* a default initial seed is used */
 
-            for (kk=0;kk<N-M;kk++) {
-                y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
-                mt[kk] = mt[kk+M] ^ (y >>> 1) ^ mag01[y & 0x1];
-            }
-            for (;kk<N-1;kk++) {
-                y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
-                mt[kk] = mt[kk+(M-N)] ^ (y >>> 1) ^ mag01[y & 0x1];
-            }
-            y = (mt[N-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
-            mt[N-1] = mt[M-1] ^ (y >>> 1) ^ mag01[y & 0x1];
+                for (kk = 0; kk < N - M; kk++) {
+                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
+                    mt[kk] = mt[kk + M] ^ (y >>> 1) ^ mag01[y & 0x1];
+                }
+                for (; kk < N - 1; kk++) {
+                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
+                    mt[kk] = mt[kk + (M - N)] ^ (y >>> 1) ^ mag01[y & 0x1];
+                }
+                y = (mt[N - 1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
+                mt[N - 1] = mt[M - 1] ^ (y >>> 1) ^ mag01[y & 0x1];
 
-            mti = 0;
+                mti = 0;
             }
-  
+
             y = mt[mti++];
 
             /* Tempering */
@@ -158,12 +158,12 @@
             return (y >>> 0) / 4294967296;
         }
 
-    for (let i=0; i<100; i++){
-        console.log (genRand())
-    }
-    console.log (2**32)
+        for (let i = 0; i < 100; i++) {
+            console.log(genRand())
+        }
+        console.log(2 ** 32)
 
-    const getTicks = {
+        const getTicks = {
             minPoint: 0,
             maxPoint: 10,
             maxTicks: 10,
@@ -310,13 +310,13 @@
             ctx.strokeStyle = '#A57700';
             ctx.lineWidth = 3;
             const be = stdev * Math.sqrt(6) / Math.PI;
-            const mi = avg - eulerConstant * be;                             
+            const mi = avg - eulerConstant * be;
             ctx.beginPath();
             for (let x = minC; x < maxC; x++) {
                 // Nethod A
                 const z = (x - mi) / be;
                 const y = (participants / be) * Math.pow(Math.E, -(z + Math.pow(Math.E, -z)));
-                const px = marginLeft + (x - minC+1) * resX;
+                const px = marginLeft + (x - minC + 1) * resX;
                 const py = maxY - y * resY - marginBottom;
                 ctx.lineTo(px, py);
             }
@@ -335,21 +335,21 @@
             for (let i = 0; i < participants; i++) {
                 let userCount = 0;
                 let userCollection = Array(colElements).fill(0);
-                let rngValue=0;
+                let rngValue = 0;
                 while (userCollection.some(item => item === 0)) {
-                    switch (rngAlgol){
+                    switch (rngAlgol) {
                         case "1":
-                          rngValue = Math.random();
-                        break;
+                            rngValue = Math.random();
+                            break;
                         case "2":
-                          rngValue = randBSD();
-                        break;
+                            rngValue = randBSD();
+                            break;
                         case "3":
-                          rngValue = genRand();
-                        break;
+                            rngValue = genRand();
+                            break;
                         default:
-                          rngValue = Math.random();
-                        break;
+                            rngValue = Math.random();
+                            break;
                     }
                     //let rngValue = randAlgol==="2"? randBSD() : Math.random();
                     let card = Math.trunc(rngValue * colElements);
@@ -376,9 +376,9 @@
 
             // Should be similar to midPos
             //const approximation = (colElements / cardsInEnvelope) * (Math.log(colElements) + eulerConstant);
-            const approximation = (1/cardsInEnvelope)*(colElements*Math.log(colElements)+eulerConstant*colElements+0.5);
+            const approximation = (1 / cardsInEnvelope) * (colElements * Math.log(colElements) + eulerConstant * colElements + 0.5);
             const approxStdDeviation = (Math.PI * (colElements - 1)) / (cardsInEnvelope * Math.sqrt(6));
-            const approxMode = approximation - (eulerConstant*approxStdDeviation*Math.sqrt(6) / Math.PI);
+            const approxMode = approximation - (eulerConstant * approxStdDeviation * Math.sqrt(6) / Math.PI);
             //const approxMode2 = approximation - (eulerConstant * (colElements-1)/ cardsInEnvelope);   ---> Equivalent
             const averageEnvs = userList.reduce((pv, cv, i) => pv + cv * i, 0) / participants;
             let sumDevsSquared = 0;
@@ -402,7 +402,7 @@
             outputHtml += '<tr><td>stdDev (Predicted): </td><td>' + approxStdDeviation.toFixed(2) + '</td></tr>';
             outputHtml += '<tr><td>Mode (Predicted): </td><td>' + approxMode.toFixed(0) + '</td></tr>';
             // outputHtml += '<tr><td>Mode (Predicted 2): </td><td>' + approxMode2.toFixed(2) + '</td></tr>';
-            
+
             outputHtml += "</table>"
             document.getElementById('summary').innerHTML = outputHtml;
 
@@ -436,6 +436,14 @@
             document.body.style.overflow = val === 'on' ? 'hidden' : 'visible';
         }
 
+        // Reset Randseeds for non native rngs
+        function resetRandSeeds() {
+            const currTime = Date.now();
+            const milliseconds = currTime - (Math.trunc (currTime/1000)*1000);
+            N = milliseconds;
+            lcgSeed = milliseconds/1000;                                    
+        }
+
 
         function submit() {
             toggleOverlay('on');
@@ -443,17 +451,17 @@
             const cards = document.getElementById('cards').value;
             const participants = document.getElementById('participants').value;
             const envelope = document.getElementById('envelope').value;
-            const randAlgol = document.getElementById ('rng').value;
-            console.log (randAlgol);
+            const randAlgol = document.getElementById('rng').value;
+            resetRandSeeds();
             // Launch the simulation
             console.log('Starting simulation with ' + cards + ' cards, and ' + participants + ' participants');
+            console.log ('Using RNG '+randAlgol);
             setTimeout(() => {  // Make sure all dom processes are finished before entering a long loop
                 start(parseInt(cards), parseInt(participants), parseInt(envelope), randAlgol);
                 console.log('Simulation finished');
                 toggleOverlay('off');
             }, 0);
         }
-
 
     </script>
 </head>
@@ -478,11 +486,11 @@
         <span class="input-label"></span><span class="input-label"><button onclick="submit()">Launch
                 simulation</button></span>
     </div>
+
     <div class="section-container">
         <div class="section-label"> Simulation summary </div>
         <div id="summary"></div>
     </div>
-
 
     <div class="section-container">
         <div class="section-label">Completion chart (Number of collectors)</div>
@@ -522,5 +530,5 @@
         Collector stats.
         How variables affect results.
 -->
-</html>
 
+</html>
